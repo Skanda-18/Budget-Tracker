@@ -23,6 +23,8 @@ async function loadDataFromServer() {
     updateDashboardStats();
     renderCategories();
     updateRecentExpenses();
+    renderCharts();
+
 }
 
 async function saveCategoryToServer(category) {
@@ -244,6 +246,7 @@ function renderCategories() {
                         `).join('')}
                     </div>
                 ` : ''}
+                ${isOverBudget ? `<div class="alert" style="color:red;">⚠ Over budget!</div>` : ''}
             </div>
         `;
     }).join('');
@@ -391,4 +394,68 @@ function showNotification(message, type = 'info') {
     });
     document.body.appendChild(notification);
     setTimeout(() => notification.remove(), 3000);
+}
+
+let monthlyChart, categoryPieChart, budgetTrendChart;
+
+function renderCharts() {
+    renderMonthlyBreakdown();
+    renderCategoryPie();
+    renderBudgetTrend();
+}
+
+// ----- Monthly Breakdown -----
+function renderMonthlyBreakdown() {
+    const monthlyData = {};
+    Object.values(expenses).flat().forEach(exp => {
+        const month = new Date(exp.date).toLocaleString('default', { month: 'short', year: 'numeric' });
+        monthlyData[month] = (monthlyData[month] || 0) + exp.amount;
+    });
+
+    const labels = Object.keys(monthlyData);
+    const data = Object.values(monthlyData);
+
+    if (monthlyChart) monthlyChart.destroy();
+    monthlyChart = new Chart(document.getElementById('monthlyBreakdownChart'), {
+        type: 'bar',
+        data: { labels, datasets: [{ label: 'Total Spent', data, backgroundColor: '#36a2eb' }] },
+        options: { responsive: true }
+    });
+}
+
+// ----- Category-wise Pie -----
+function renderCategoryPie() {
+    const labels = categories.map(c => c.name);
+    const data = categories.map(c =>
+        (expenses[c.id] || []).reduce((sum, e) => sum + e.amount, 0)
+    );
+
+    if (categoryPieChart) categoryPieChart.destroy();
+    categoryPieChart = new Chart(document.getElementById('categoryPieChart'), {
+        type: 'pie',
+        data: { labels, datasets: [{ data, backgroundColor: ['#ff6384','#36a2eb','#ffcd56','#4bc0c0','#9966ff'] }] },
+        options: { responsive: true }
+    });
+}
+
+// ----- Budget vs Spent Trend -----
+function renderBudgetTrend() {
+    const labels = categories.map(c => c.name);
+    const spent = categories.map(c =>
+        (expenses[c.id] || []).reduce((sum, e) => sum + e.amount, 0)
+    );
+    const budgets = categories.map(c => c.budget);
+
+    if (budgetTrendChart) budgetTrendChart.destroy();
+    budgetTrendChart = new Chart(document.getElementById('budgetTrendChart'), {
+        type: 'line',
+        data: {
+            labels,
+            datasets: [
+                { label: 'Budget', data: budgets, borderColor: '#36a2eb', fill: false },
+                { label: 'Spent', data: spent, borderColor: '#ff6384', fill: false }
+            ]
+        },
+        options: { responsive: true }
+    });
 }
