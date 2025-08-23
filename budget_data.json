@@ -1,0 +1,65 @@
+{
+    "categories": [
+        {
+            "id": "cat_1755929085019",
+            "name": "Family",
+            "budget": 25000.0
+        },
+        {
+            "id": "cat_1755929170759",
+            "name": "Banglore expense",
+            "budget": 15000.0
+        },
+        {
+            "id": "cat_1755929297296",
+            "name": "Investment",
+            "budget": 40000.0
+        },
+        {
+            "id": "cat_1755929800328",
+            "name": "Loans/EMI",
+            "budget": 8500.0
+        },
+        {
+            "id": "cat_1755930338470",
+            "name": "Subscription/Bills",
+            "budget": 2000.0
+        }
+    ],
+    "expenses": {
+        "cat_1755929085019": [
+            {
+                "id": "exp_1755929141856",
+                "description": "AMMA 22/08/2025",
+                "amount": 25000.0,
+                "date": "2025-08-23"
+            }
+        ],
+        "cat_1755929170759": [
+            {
+                "id": "exp_1755929195276",
+                "description": "Dosa Dinner 22/08/25",
+                "amount": 60.0,
+                "date": "2025-08-23"
+            },
+            {
+                "id": "exp_1755929219407",
+                "description": "Snacks 22/08/2025",
+                "amount": 100.0,
+                "date": "2025-08-23"
+            },
+            {
+                "id": "exp_1755929259192",
+                "description": "set Dosa Breakfast 23/08/2025",
+                "amount": 70.0,
+                "date": "2025-08-23"
+            },
+            {
+                "id": "exp_1755929731668",
+                "description": "Corn maggi 22/08/2025",
+                "amount": 40.0,
+                "date": "2025-08-23"
+            }
+        ]
+    }
+}

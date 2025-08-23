@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Budget Tracker</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Header with Navigation -->
+    <div class="header">
+        <div class="nav">
+            <h1>💰 Budget Tracker</h1>
+            <button class="nav-btn active" onclick="showDashboard()">Dashboard</button>
+            <button class="nav-btn" onclick="showBudget()">Budget</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Dashboard Section -->
+        <div id="dashboard" class="section active">
+            <h2>📊 Dashboard</h2>
+            <div class="stats-grid">
+                <div class="stat-card total-budget">
+                    <div class="stat-icon">💳</div>
+                    <div class="stat-info">
+                        <div class="stat-label">Total Budget</div>
+                        <div class="stat-value" id="totalBudgetStat">$0.00</div>
+                    </div>
+                </div>
+                <div class="stat-card total-spent">
+                    <div class="stat-icon">💸</div>
+                    <div class="stat-info">
+                        <div class="stat-label">Total Spent</div>
+                        <div class="stat-value" id="totalSpentStat">$0.00</div>
+                    </div>
+                </div>
+                <div class="stat-card remaining">
+                    <div class="stat-icon">💰</div>
+                    <div class="stat-info">
+                        <div class="stat-label">Remaining</div>
+                        <div class="stat-value" id="remainingStat">$0.00</div>
+                    </div>
+                </div>
+                <div class="stat-card categories">
+                    <div class="stat-icon">📋</div>
+                    <div class="stat-info">
+                        <div class="stat-label">Categories</div>
+                        <div class="stat-value" id="categoriesStat">0</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="dashboard-content">
+                <div class="recent-expenses">
+                    <h3>Recent Expenses</h3>
+                    <div id="recentExpensesList" class="recent-list">
+                        <p class="no-data">No expenses yet...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Budget Section -->
+        <div id="budget" class="section">
+            <div class="budget-header">
+                <h2>💳 Budget Categories</h2>
+                <button class="add-category-btn" onclick="openAddCategoryModal()">
+                    + Add Category
+                </button>
+            </div>
+            
+            <div id="categoriesContainer" class="categories-grid">
+                <p class="no-data">No categories yet. Click "Add Category" to get started!</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Category Modal -->
+    <div id="addCategoryModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add New Category</h3>
+                <button class="close-btn" onclick="closeAddCategoryModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="input-group">
+                    <label for="categoryNameInput">Category Name</label>
+                    <input type="text" id="categoryNameInput" placeholder="e.g., Food, Transportation">
+                </div>
+                <div class="input-group">
+                    <label for="categoryBudgetInput">Budget Amount</label>
+                    <input type="number" id="categoryBudgetInput" placeholder="0.00" step="0.01" min="0">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="cancel-btn" onclick="closeAddCategoryModal()">Cancel</button>
+                <button class="add-btn" onclick="addCategory()">Add Category</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Data Management Section (Hidden by default) -->
+    <div class="data-management">
+        <button class="export-btn" onclick="exportData()" title="Export Data">📤</button>
+        <input type="file" id="importInput" accept=".json" onchange="importData(event)" style="display: none;">
+        <button class="import-btn" onclick="document.getElementById('importInput').click()" title="Import Data">📥</button>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
