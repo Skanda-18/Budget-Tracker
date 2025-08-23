@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <!-- Header with Navigation -->
+    <!-- Header -->
     <div class="header">
         <div class="nav">
             <h1>💰 Budget Tracker</h1>
@@ -17,7 +17,7 @@
     </div>
 
     <div class="container">
-        <!-- Dashboard Section -->
+        <!-- Dashboard -->
         <div id="dashboard" class="section active">
             <h2>📊 Dashboard</h2>
             <div class="stats-grid">
@@ -100,7 +100,29 @@
         </div>
     </div>
 
-    <!-- Data Management Section (Hidden by default) -->
+    <!-- NEW: Edit Category Modal -->
+    <div id="editCategoryModal" class="modal">
+      <div class="modal-content">
+        <h3>Edit Category</h3>
+        <input type="text" id="editCategoryName">
+        <input type="number" id="editCategoryBudget" step="0.01">
+        <button onclick="saveCategoryEdit()">Save</button>
+        <button onclick="closeEditCategoryModal()">Cancel</button>
+      </div>
+    </div>
+
+    <!-- NEW: Edit Expense Modal -->
+    <div id="editExpenseModal" class="modal">
+      <div class="modal-content">
+        <h3>Edit Expense</h3>
+        <input type="text" id="editExpenseDesc">
+        <input type="number" id="editExpenseAmount" step="0.01">
+        <button onclick="saveExpenseEdit()">Save</button>
+        <button onclick="closeEditExpenseModal()">Cancel</button>
+      </div>
+    </div>
+
+    <!-- Data Management -->
     <div class="data-management">
         <button class="export-btn" onclick="exportData()" title="Export Data">📤</button>
         <input type="file" id="importInput" accept=".json" onchange="importData(event)" style="display: none;">

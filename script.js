@@ -49,6 +49,23 @@ async function deleteExpenseFromServer(expenseId) {
     await fetch(`/delete_expense/${expenseId}`, { method: 'DELETE' });
 }
 
+// ---------- NEW API (EDIT) ----------
+async function updateCategoryOnServer(categoryId, updatedData) {
+    await fetch(`/update_category/${categoryId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedData)
+    });
+}
+
+async function updateExpenseOnServer(expenseId, updatedData) {
+    await fetch(`/update_expense/${expenseId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedData)
+    });
+}
+
 // ---------- Navigation ----------
 function showDashboard() {
     dashboardSection.classList.add('active');
@@ -137,7 +154,7 @@ async function addExpense(categoryId) {
         category_id: categoryId,
         description,
         amount,
-        date: new Date().toISOString().split('T')[0]
+        date: new Date().toISOString() 
     };
 
     expenses[categoryId].push({
@@ -188,6 +205,7 @@ function renderCategories() {
             <div class="category-card">
                 <div class="category-header">
                     <div class="category-name">${category.name}</div>
+                    <button onclick="openEditCategoryModal('${category.id}')">✎ Edit</button>
                     <button class="delete-btn" onclick="deleteCategory('${category.id}')">Delete</button>
                 </div>
                 
@@ -219,6 +237,7 @@ function renderCategories() {
                                 </div>
                                 <div style="display: flex; align-items: center;">
                                     <span>${expense.amount.toFixed(2)}</span>
+                                    <button onclick="openEditExpenseModal('${category.id}', '${expense.id}')">✎</button>
                                     <button class="expense-delete" onclick="deleteExpense('${category.id}', '${expense.id}')">×</button>
                                 </div>
                             </div>
@@ -257,7 +276,8 @@ function updateRecentExpenses() {
         }
     });
 
-    allExpenses.sort((a, b) => new Date(b.date) - new Date(a.date));
+    allExpenses.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
     const recentExpenses = allExpenses.slice(0, 5);
 
     if (recentExpenses.length === 0) {
@@ -270,11 +290,88 @@ function updateRecentExpenses() {
             <div class="expense-details">
                 <div class="expense-category">${expense.categoryName}</div>
                 <div class="expense-description">${expense.description}</div>
-                <small>${expense.date}</small>
+                <small>${new Date(expense.date).toLocaleString()}</small>
+
             </div>
             <div class="expense-amount">${expense.amount.toFixed(2)}</div>
         </div>
     `).join('');
+}
+
+// ---------- NEW: Edit Modal Logic ----------
+let editingCategoryId = null;
+let editingExpenseId = null;
+let editingExpenseCategoryId = null;
+
+// Category Editing
+function openEditCategoryModal(categoryId) {
+    editingCategoryId = categoryId;
+    const category = categories.find(c => c.id === categoryId);
+    document.getElementById('editCategoryName').value = category.name;
+    document.getElementById('editCategoryBudget').value = category.budget;
+    document.getElementById('editCategoryModal').classList.add('active');
+}
+
+function closeEditCategoryModal() {
+    document.getElementById('editCategoryModal').classList.remove('active');
+    editingCategoryId = null;
+}
+
+async function saveCategoryEdit() {
+    const name = document.getElementById('editCategoryName').value.trim();
+    const budget = parseFloat(document.getElementById('editCategoryBudget').value);
+
+    if (!name || !budget || budget <= 0) {
+        alert('Enter valid name and budget.');
+        return;
+    }
+
+    const category = categories.find(c => c.id === editingCategoryId);
+    category.name = name;
+    category.budget = budget;
+
+    await updateCategoryOnServer(editingCategoryId, { name, budget });
+    renderCategories();
+    updateDashboardStats();
+    closeEditCategoryModal();
+    showNotification('Category updated successfully!', 'success');
+}
+
+// Expense Editing
+function openEditExpenseModal(categoryId, expenseId) {
+    editingExpenseId = expenseId;
+    editingExpenseCategoryId = categoryId;
+    const expense = expenses[categoryId].find(e => e.id === expenseId);
+    document.getElementById('editExpenseDesc').value = expense.description;
+    document.getElementById('editExpenseAmount').value = expense.amount;
+    document.getElementById('editExpenseModal').classList.add('active');
+}
+
+function closeEditExpenseModal() {
+    document.getElementById('editExpenseModal').classList.remove('active');
+    editingExpenseId = null;
+    editingExpenseCategoryId = null;
+}
+
+async function saveExpenseEdit() {
+    const description = document.getElementById('editExpenseDesc').value.trim();
+    const amount = parseFloat(document.getElementById('editExpenseAmount').value);
+
+    if (!description || !amount || amount <= 0) {
+        alert('Enter valid description and amount.');
+        return;
+    }
+
+    const expense = expenses[editingExpenseCategoryId].find(e => e.id === editingExpenseId);
+    expense.description = description;
+    expense.amount = amount;
+
+    await updateExpenseOnServer(editingExpenseId, { description, amount });
+    renderCategories();
+    updateDashboardStats();
+    updateRecentExpenses();
+    closeEditExpenseModal();
+    showNotification('Expense updated successfully!', 'success');
 }
 
 // ---------- Utility ----------
