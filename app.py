@@ -12,6 +12,7 @@ JSON_FILE = 'budget_data.json'
 def init_db():
     with sqlite3.connect(DB_FILE) as conn:
         c = conn.cursor()
+        # Existing tables
         c.execute('''CREATE TABLE IF NOT EXISTS categories (
                         id TEXT PRIMARY KEY,
                         name TEXT NOT NULL,
@@ -25,7 +26,31 @@ def init_db():
                         date TEXT NOT NULL,
                         FOREIGN KEY (category_id) REFERENCES categories (id)
                     )''')
+        # NEW: Salary table
+        c.execute('''CREATE TABLE IF NOT EXISTS salary (
+                        id INTEGER PRIMARY KEY CHECK (id=1),
+                        amount REAL NOT NULL
+                    )''')
+        # Ensure a default salary row exists
+        c.execute("INSERT OR IGNORE INTO salary (id, amount) VALUES (1, 0)")
         conn.commit()
+
+@app.route('/get_salary', methods=['GET'])
+def get_salary():
+    with sqlite3.connect(DB_FILE) as conn:
+        c = conn.cursor()
+        c.execute("SELECT amount FROM salary WHERE id=1")
+        row = c.fetchone()
+        return jsonify({'salary': row[0] if row else 0})
+
+@app.route('/update_salary', methods=['POST'])
+def update_salary():
+    data = request.json
+    with sqlite3.connect(DB_FILE) as conn:
+        c = conn.cursor()
+        c.execute("UPDATE salary SET amount=? WHERE id=1", (data['amount'],))
+        conn.commit()
+    return jsonify({'message': 'Salary updated successfully'})
 
 init_db()
 

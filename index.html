@@ -49,6 +49,21 @@
                         <div class="stat-value" id="categoriesStat">0</div>
                     </div>
                 </div>
+                <div class="stat-card salary">
+                    <div class="stat-icon">🏦</div>
+                    <div class="stat-info">
+                        <div class="stat-label">Salary</div>
+                        <div class="stat-value" id="salaryStat">$0.00</div>
+                        <button onclick="openEditSalaryModal()">✎ Edit</button>
+                    </div>
+                </div>
+                <div class="stat-card savings">
+                    <div class="stat-icon">💵</div>
+                    <div class="stat-info">
+                        <div class="stat-label">Savings Amount</div>
+                        <div class="stat-value" id="savingsStat">$0.00</div>
+                    </div>
+                </div>
             </div>
             
             <div class="dashboard-content">
@@ -149,6 +164,16 @@
         <input type="file" id="importInput" accept=".json" onchange="importData(event)" style="display: none;">
         <button class="import-btn" onclick="document.getElementById('importInput').click()" title="Import Data">📥</button>
     </div>
+
+    <div id="editSalaryModal" class="modal">
+        <div class="modal-content">
+          <h3>Edit Salary</h3>
+          <input type="number" id="editSalaryInput" step="0.01">
+          <button onclick="saveSalaryEdit()">Save</button>
+          <button onclick="closeEditSalaryModal()">Cancel</button>
+        </div>
+    </div>
+      
 
     <script src="script.js"></script>
 </body>

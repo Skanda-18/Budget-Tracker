@@ -1,6 +1,7 @@
 // Global Data Storage
 let categories = [];
 let expenses = {};
+let salary = 0;
 
 // DOM Elements
 const dashboardSection = document.getElementById('dashboard');
@@ -20,12 +21,20 @@ async function loadDataFromServer() {
     const data = await res.json();
     categories = data.categories;
     expenses = data.expenses;
+
+    // NEW: load salary
+    const salaryRes = await fetch('/get_salary');
+    const salaryData = await salaryRes.json();
+    salary = salaryData.salary;
+
     updateDashboardStats();
     renderCategories();
     updateRecentExpenses();
     renderCharts();
-
 }
+
+
+
 
 async function saveCategoryToServer(category) {
     await fetch('/add_category', {
@@ -211,12 +220,14 @@ function renderCategories() {
                     <button class="delete-btn" onclick="deleteCategory('${category.id}')">Delete</button>
                 </div>
                 
-                <div class="budget-input-group">
-                    <input type="text" id="desc_${category.id}" placeholder="Expense description" />
-                    <input type="number" id="amount_${category.id}" placeholder="Amount" step="0.01" min="0" />
-                    <button class="add-expense-btn" onclick="addExpense('${category.id}')">Add</button>
-                </div>
+               
                 
+                <div class="budget-input-group">
+                    <input type="text" id="desc_${category.id}" placeholder="Expense description">
+                    <input type="number" id="amount_${category.id}" placeholder="Amount">
+                <button class="add-expense-btn" onclick="addExpense('${category.id}')">Add</button>
+                </div>
+
                 <div class="progress-bar">
                     <div class="progress-fill ${isOverBudget ? 'over-budget' : ''}" style="width: ${percentage}%"></div>
                 </div>
@@ -246,7 +257,7 @@ function renderCategories() {
                         `).join('')}
                     </div>
                 ` : ''}
-                ${isOverBudget ? `<div class="alert" style="color:red;">⚠ Over budget!</div>` : ''}
+                ${isOverBudget ? `<div class="alert" style="color:red;">⚠  Over budget!</div>` : ''}
             </div>
         `;
     }).join('');
@@ -259,13 +270,42 @@ function updateDashboardStats() {
         return sum + expenses[categoryId].reduce((catSum, exp) => catSum + exp.amount, 0);
     }, 0);
     const remaining = totalBudget - totalSpent;
-    const categoriesCount = categories.length;
+    const savings = salary - totalBudget;
 
-    document.getElementById('totalBudgetStat').textContent = `${totalBudget.toFixed(2)}`;
-    document.getElementById('totalSpentStat').textContent = `${totalSpent.toFixed(2)}`;
-    document.getElementById('remainingStat').textContent = `${remaining.toFixed(2)}`;
-    document.getElementById('categoriesStat').textContent = categoriesCount;
+    document.getElementById('totalBudgetStat').textContent = totalBudget.toFixed(2);
+    document.getElementById('totalSpentStat').textContent = totalSpent.toFixed(2);
+    document.getElementById('remainingStat').textContent = remaining.toFixed(2);
+    document.getElementById('categoriesStat').textContent = categories.length;
+    document.getElementById('salaryStat').textContent = salary.toFixed(2);
+    document.getElementById('savingsStat').textContent = savings.toFixed(2);
 }
+
+function openEditSalaryModal() {
+    document.getElementById('editSalaryInput').value = salary;
+    document.getElementById('editSalaryModal').classList.add('active');
+}
+
+function closeEditSalaryModal() {
+    document.getElementById('editSalaryModal').classList.remove('active');
+}
+
+async function saveSalaryEdit() {
+    const newSalary = parseFloat(document.getElementById('editSalaryInput').value);
+    if (!newSalary || newSalary <= 0) {
+        alert('Enter a valid salary.');
+        return;
+    }
+    salary = newSalary;
+    await fetch('/update_salary', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: newSalary })
+    });
+    updateDashboardStats();
+    closeEditSalaryModal();
+    showNotification('Salary updated successfully!', 'success');
+}
+
 
 function updateRecentExpenses() {
     const recentList = document.getElementById('recentExpensesList');
