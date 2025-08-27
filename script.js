@@ -22,6 +22,12 @@ async function loadDataFromServer() {
     categories = data.categories;
     expenses = data.expenses;
 
+    categories.forEach(cat => {
+        if (!expenses[cat.id]) {
+            expenses[cat.id] = [];
+        }
+    });
+
     // NEW: load salary
     const salaryRes = await fetch('/get_salary');
     const salaryData = await salaryRes.json();
@@ -32,9 +38,6 @@ async function loadDataFromServer() {
     updateRecentExpenses();
     renderCharts();
 }
-
-
-
 
 async function saveCategoryToServer(category) {
     await fetch('/add_category', {
@@ -136,6 +139,10 @@ async function addCategory() {
 }
 
 async function deleteCategory(categoryId) {
+    if (categoryId === 'misc_cat') {
+        alert("The Miscellaneous category cannot be deleted.");
+        return;
+    }
     if (!confirm('Are you sure you want to delete this category? All expenses will be lost.')) return;
 
     categories = categories.filter(cat => cat.id !== categoryId);
@@ -155,23 +162,25 @@ async function addExpense(categoryId) {
     const description = descInput.value.trim();
     const amount = parseFloat(amountInput.value);
 
-    if (!description || !amount || amount <= 0) {
+    if (!description || isNaN(amount) || amount <= 0) {
         alert('Please enter a valid description and amount.');
         return;
     }
+
+    if (!expenses[categoryId]) expenses[categoryId] = []; // ✅ Ensure array exists
 
     const expense = {
         id: 'exp_' + Date.now(),
         category_id: categoryId,
         description,
         amount,
-        date: new Date().toISOString() 
+        date: new Date().toISOString()
     };
 
-    expenses[categoryId].push({
+    expenses[categoryId].unshift({   // ✅ newest first
         id: expense.id,
-        description: description,
-        amount: amount,
+        description,
+        amount,
         date: expense.date
     });
 
@@ -206,51 +215,57 @@ function renderCategories() {
     }
 
     categoriesContainer.innerHTML = categories.map(category => {
-        const categoryExpenses = expenses[category.id] || [];
+        // LIFO expenses
+        const categoryExpenses = (expenses[category.id] || []).slice().sort((a, b) => new Date(b.date) - new Date(a.date));
         const totalSpent = categoryExpenses.reduce((sum, exp) => sum + exp.amount, 0);
         const remaining = category.budget - totalSpent;
-        const percentage = Math.min((totalSpent / category.budget) * 100, 100);
-        const isOverBudget = totalSpent > category.budget;
+        const percentage = category.budget > 0 ? Math.min((totalSpent / category.budget) * 100, 100) : 0;
+        const isOverBudget = category.budget > 0 && totalSpent > category.budget;
 
         return `
             <div class="category-card">
                 <div class="category-header">
                     <div class="category-name">${category.name}</div>
-                    <button onclick="openEditCategoryModal('${category.id}')">✎ Edit</button>
-                    <button class="delete-btn" onclick="deleteCategory('${category.id}')">Delete</button>
+                    ${category.id !== 'misc_cat' ? `
+                        <button class="edit-btn" onclick="openEditCategoryModal('${category.id}')">✎ Edit</button>
+                        <button class="delete-btn" onclick="deleteCategory('${category.id}')">Delete</button>
+                    ` : `<span class="locked-tag">Default</span>`}
                 </div>
-                
-               
-                
+
+                <!-- Always allow adding expense -->
                 <div class="budget-input-group">
                     <input type="text" id="desc_${category.id}" placeholder="Expense description">
                     <input type="number" id="amount_${category.id}" placeholder="Amount">
-                <button class="add-expense-btn" onclick="addExpense('${category.id}')">Add</button>
+                    <button class="add-expense-btn" onclick="addExpense('${category.id}')">Add</button>
                 </div>
 
+                ${category.budget > 0 ? `
                 <div class="progress-bar">
                     <div class="progress-fill ${isOverBudget ? 'over-budget' : ''}" style="width: ${percentage}%"></div>
                 </div>
-                
                 <div class="budget-summary">
                     <span>Spent: ${totalSpent.toFixed(2)}</span>
                     <span>Budget: ${category.budget.toFixed(2)}</span>
                     <span style="color: ${remaining >= 0 ? '#2ed573' : '#ff4757'}">
                         ${remaining >= 0 ? 'Left' : 'Over'}: ${Math.abs(remaining).toFixed(2)}
                     </span>
-                </div>
-                
+                </div>` : `
+                <div class="budget-summary">
+                    <span>Spent: ${totalSpent.toFixed(2)}</span>
+                    <span>No budget allocation</span>
+                </div>`}
+
                 ${categoryExpenses.length > 0 ? `
                     <div class="expenses-list">
                         ${categoryExpenses.map(expense => `
                             <div class="expense-item">
                                 <div>
                                     <strong>${expense.description}</strong><br>
-                                    <small>${expense.date}</small>
+                                    <small>${new Date(expense.date).toLocaleString()}</small>
                                 </div>
                                 <div style="display: flex; align-items: center;">
                                     <span>${expense.amount.toFixed(2)}</span>
-                                    <button onclick="openEditExpenseModal('${category.id}', '${expense.id}')">✎</button>
+                                    <button class="edit-btn" onclick="openEditExpenseModal('${category.id}', '${expense.id}')">✎</button>
                                     <button class="expense-delete" onclick="deleteExpense('${category.id}', '${expense.id}')">×</button>
                                 </div>
                             </div>
@@ -270,7 +285,7 @@ function updateDashboardStats() {
         return sum + expenses[categoryId].reduce((catSum, exp) => catSum + exp.amount, 0);
     }, 0);
     const remaining = totalBudget - totalSpent;
-    const savings = salary - totalBudget;
+    const savings = salary - totalSpent;   // ✅ FIXED
 
     document.getElementById('totalBudgetStat').textContent = totalBudget.toFixed(2);
     document.getElementById('totalSpentStat').textContent = totalSpent.toFixed(2);
@@ -306,7 +321,6 @@ async function saveSalaryEdit() {
     showNotification('Salary updated successfully!', 'success');
 }
 
-
 function updateRecentExpenses() {
     const recentList = document.getElementById('recentExpensesList');
     const allExpenses = [];
@@ -334,7 +348,6 @@ function updateRecentExpenses() {
                 <div class="expense-category">${expense.categoryName}</div>
                 <div class="expense-description">${expense.description}</div>
                 <small>${new Date(expense.date).toLocaleString()}</small>
-
             </div>
             <div class="expense-amount">${expense.amount.toFixed(2)}</div>
         </div>
@@ -473,18 +486,26 @@ function renderCategoryPie() {
     if (categoryPieChart) categoryPieChart.destroy();
     categoryPieChart = new Chart(document.getElementById('categoryPieChart'), {
         type: 'pie',
-        data: { labels, datasets: [{ data, backgroundColor: ['#ff6384','#36a2eb','#ffcd56','#4bc0c0','#9966ff'] }] },
+        data: { 
+            labels, 
+            datasets: [{ 
+                data, 
+                backgroundColor: ['#ff6384','#36a2eb','#ffcd56','#4bc0c0','#9966ff','#e17055'] 
+            }] 
+        },
         options: { responsive: true }
     });
 }
 
 // ----- Budget vs Spent Trend -----
 function renderBudgetTrend() {
-    const labels = categories.map(c => c.name);
-    const spent = categories.map(c =>
+    const validCategories = categories.filter(c => c.id !== 'misc_cat');
+
+    const labels = validCategories.map(c => c.name);
+    const spent = validCategories.map(c =>
         (expenses[c.id] || []).reduce((sum, e) => sum + e.amount, 0)
     );
-    const budgets = categories.map(c => c.budget);
+    const budgets = validCategories.map(c => c.budget);
 
     if (budgetTrendChart) budgetTrendChart.destroy();
     budgetTrendChart = new Chart(document.getElementById('budgetTrendChart'), {
@@ -499,3 +520,4 @@ function renderBudgetTrend() {
         options: { responsive: true }
     });
 }
+
