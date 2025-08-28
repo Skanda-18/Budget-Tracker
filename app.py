@@ -12,12 +12,13 @@ JSON_FILE = 'budget_data.json'
 def init_db():
     with sqlite3.connect(DB_FILE) as conn:
         c = conn.cursor()
-        # Existing tables
+        # Categories table
         c.execute('''CREATE TABLE IF NOT EXISTS categories (
                         id TEXT PRIMARY KEY,
                         name TEXT NOT NULL,
                         budget REAL NOT NULL
                     )''')
+        # Expenses table
         c.execute('''CREATE TABLE IF NOT EXISTS expenses (
                         id TEXT PRIMARY KEY,
                         category_id TEXT NOT NULL,
@@ -26,14 +27,20 @@ def init_db():
                         date TEXT NOT NULL,
                         FOREIGN KEY (category_id) REFERENCES categories (id)
                     )''')
-        # NEW: Salary table
+        # Salary table
         c.execute('''CREATE TABLE IF NOT EXISTS salary (
                         id INTEGER PRIMARY KEY CHECK (id=1),
                         amount REAL NOT NULL
                     )''')
-        # Ensure a default salary row exists
         c.execute("INSERT OR IGNORE INTO salary (id, amount) VALUES (1, 0)")
+
+        # Ensure default Miscellaneous category exists
+        c.execute("SELECT id FROM categories WHERE id='misc_cat'")
+        if not c.fetchone():
+            c.execute("INSERT INTO categories (id, name, budget) VALUES (?, ?, ?)",
+                      ("misc_cat", "Miscellaneous / Unknown", 0.0))
         conn.commit()
+
 
 @app.route('/get_salary', methods=['GET'])
 def get_salary():

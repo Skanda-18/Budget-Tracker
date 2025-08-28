@@ -280,20 +280,33 @@ function renderCategories() {
 
 // ---------- Dashboard ----------
 function updateDashboardStats() {
+    // Split expenses into budgeted and miscellaneous
     const totalBudget = categories.reduce((sum, cat) => sum + cat.budget, 0);
-    const totalSpent = Object.keys(expenses).reduce((sum, categoryId) => {
-        return sum + expenses[categoryId].reduce((catSum, exp) => catSum + exp.amount, 0);
-    }, 0);
+
+    let totalSpent = 0;
+    let miscSpent = 0;
+
+    categories.forEach(cat => {
+        const catSpent = (expenses[cat.id] || []).reduce((s, e) => s + e.amount, 0);
+        if (cat.id === 'misc_cat') {
+            miscSpent += catSpent;  // ✅ Miscellaneous separate
+        } else {
+            totalSpent += catSpent; // ✅ Budgeted categories only
+        }
+    });
+
     const remaining = totalBudget - totalSpent;
-    const savings = salary - totalSpent;   // ✅ FIXED
+    const savings = salary - (totalSpent + miscSpent);
 
     document.getElementById('totalBudgetStat').textContent = totalBudget.toFixed(2);
     document.getElementById('totalSpentStat').textContent = totalSpent.toFixed(2);
+    document.getElementById('additionalSpentStat').textContent = miscSpent.toFixed(2); // ✅ new box
     document.getElementById('remainingStat').textContent = remaining.toFixed(2);
     document.getElementById('categoriesStat').textContent = categories.length;
     document.getElementById('salaryStat').textContent = salary.toFixed(2);
     document.getElementById('savingsStat').textContent = savings.toFixed(2);
 }
+
 
 function openEditSalaryModal() {
     document.getElementById('editSalaryInput').value = salary;

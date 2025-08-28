@@ -128,6 +128,11 @@ body {
     color: white;
 }
 
+.stat-card.additional-spent {
+    background: linear-gradient(135deg, #720202 0%, #401c42 100%);   /* orange-ish */
+    color: white;
+}
+
 .stat-icon {
     font-size: 2rem;
     opacity: 0.8;
