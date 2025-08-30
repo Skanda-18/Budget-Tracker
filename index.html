@@ -7,6 +7,20 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+
+<button class="open-sidebar-btn" onclick="openSidebar()">☰ Databases</button>
+
+<!-- Sidebar -->
+<div id="sidebar" class="sidebar">
+  <h3>Databases</h3>
+  <ul id="dbList"></ul>
+  <button class="create-db-btn" onclick="openCreateDBModal()">➕ Create New DB</button>
+  <button class="close-btn" onclick="closeSidebar()">✖ Close</button>
+</div>
+
+    
+<div id="sidebar-overlay" class="sidebar-overlay" onclick="closeSidebar()"></div>
+
     <!-- Header -->
     <div class="header">
         <div class="nav">
@@ -154,6 +168,16 @@
         <button onclick="closeEditCategoryModal()">Cancel</button>
       </div>
     </div>
+
+    <div id="createDBModal" class="modal">
+        <div class="modal-content">
+          <h3>Create New Database</h3>
+          <input type="text" id="newDBNameModal" placeholder="Enter DB name">
+          <button onclick="createDBFromModal()">Create</button>
+          <button onclick="closeCreateDBModal()">Cancel</button>
+        </div>
+    </div>
+
 
     <!-- NEW: Edit Expense Modal -->
     <div id="editExpenseModal" class="modal">

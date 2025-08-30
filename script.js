@@ -110,6 +110,40 @@ function closeAddCategoryModal() {
     document.getElementById('categoryBudgetInput').value = '';
 }
 
+function openSidebar() {
+    document.getElementById('sidebar').classList.add('active');
+    document.getElementById('sidebar-overlay').classList.add('active');
+}
+
+
+
+// Update your closeSidebar function  
+function closeSidebar() {
+    document.getElementById('sidebar').classList.remove('active');
+    document.getElementById('sidebar-overlay').classList.remove('active');
+}
+
+function openCreateDBModal() {
+    document.getElementById("createDBModal").classList.add("active");
+  }
+  function closeCreateDBModal() {
+    document.getElementById("createDBModal").classList.remove("active");
+  }
+  async function createDBFromModal() {
+    const name = document.getElementById("newDBNameModal").value.trim();
+    if (!name) { alert("Enter DB name"); return; }
+    const res = await fetch("/create_db", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ dbname: name })
+    });
+    const data = await res.json();
+    if (data.error) { alert(data.error); return; }
+    closeCreateDBModal();
+    showNotification(data.message, "success");
+    loadDBList();
+  }
+
 // ---------- Category Management ----------
 async function addCategory() {
     const name = document.getElementById('categoryNameInput').value.trim();
@@ -206,6 +240,43 @@ async function deleteExpense(categoryId, expenseId) {
     updateRecentExpenses();
     showNotification('Expense deleted successfully!', 'success');
 }
+
+async function loadDBList() {
+    const res = await fetch("/list_dbs");
+    const data = await res.json();
+    const dbs = data.databases || [];
+    const active = data.active;
+    const dbList = document.getElementById("dbList");
+    dbList.innerHTML = dbs.map(db => 
+        `<li class="${db === active ? 'active-db' : ''}" onclick="switchDB('${db}')">${db}</li>`
+    ).join('');
+}
+
+async function createDB() {
+    const name = document.getElementById("newDBName").value.trim();
+    if (!name) { alert("Enter DB name"); return; }
+    const res = await fetch("/create_db", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ dbname: name })
+    });
+    const data = await res.json();
+    if (data.error) { alert(data.error); return; }
+    document.getElementById("newDBName").value = "";
+    showNotification(data.message, "success");
+    loadDBList();
+}
+
+
+async function switchDB(dbname) {
+    await fetch(`/switch_db/${dbname}`, { method: "POST" });
+    await loadDataFromServer();  // reload dashboard data for active DB
+    closeSidebar();
+    showNotification(`Switched to ${dbname}`, "success");
+}
+// Load DB list when page starts
+document.addEventListener("DOMContentLoaded", loadDBList);
+
 
 // ---------- Rendering ----------
 function renderCategories() {
