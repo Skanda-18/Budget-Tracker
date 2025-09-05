@@ -113,6 +113,19 @@ function closeAddCategoryModal() {
 function openSidebar() {
     document.getElementById('sidebar').classList.add('active');
     document.getElementById('sidebar-overlay').classList.add('active');
+
+    sb.classList.add('active');
+    ov.classList.add('active');
+
+    // 🔁 Always refresh DB list + highlight when opening
+    loadDBList();
+}
+
+function highlightActiveDB(activeName) {
+    document.querySelectorAll("#dbList li").forEach(li => {
+        if (li.getAttribute("data-db") === activeName) li.classList.add("active-db");
+        else li.classList.remove("active-db");
+    });
 }
 
 
@@ -242,14 +255,27 @@ async function deleteExpense(categoryId, expenseId) {
 }
 
 async function loadDBList() {
-    const res = await fetch("/list_dbs");
-    const data = await res.json();
-    const dbs = data.databases || [];
-    const active = data.active;
-    const dbList = document.getElementById("dbList");
-    dbList.innerHTML = dbs.map(db => 
-        `<li class="${db === active ? 'active-db' : ''}" onclick="switchDB('${db}')">${db}</li>`
-    ).join('');
+    try {
+        const res = await fetch("/list_dbs");
+        const data = await res.json();
+        const dbs = data.databases || data.dbs || [];     // tolerate either shape
+        const active = data.active || data.active_db;     // tolerate either key
+
+        const dbList = document.getElementById("dbList");
+        dbList.innerHTML = ""; // rebuild list
+
+        dbs.forEach((db) => {
+            const li = document.createElement("li");
+            li.setAttribute("data-db", db);
+            li.textContent = db;
+            if (db === active) li.classList.add("active-db");
+
+            li.addEventListener("click", () => switchDB(db, li)); // pass the li for optimistic highlight
+            dbList.appendChild(li);
+        });
+    } catch (err) {
+        console.error("Error loading databases:", err);
+    }
 }
 
 async function createDB() {
@@ -268,12 +294,33 @@ async function createDB() {
 }
 
 
-async function switchDB(dbname) {
-    await fetch(`/switch_db/${dbname}`, { method: "POST" });
-    await loadDataFromServer();  // reload dashboard data for active DB
-    closeSidebar();
-    showNotification(`Switched to ${dbname}`, "success");
+async function switchDB(dbname, clickedLi = null) {
+    // ✅ Optimistic UI: mark the clicked item active immediately
+    if (clickedLi) {
+        document.querySelectorAll("#dbList li").forEach(el => el.classList.remove("active-db"));
+        clickedLi.classList.add("active-db");
+    }
+
+    try {
+        const resp = await fetch(`/switch_db/${dbname}`, { method: "POST" });
+        if (!resp.ok) throw new Error("Switch DB failed");
+
+        // Reload app data for the now-active DB
+        await loadDataFromServer();
+
+        // ✅ Authoritative refresh from backend (guarantees correct active highlight)
+        await loadDBList();
+
+        closeSidebar();
+        showNotification(`Switched to ${dbname}`, "success");
+    } catch (e) {
+        console.error(e);
+        showNotification("Failed to switch database", "error");
+        // if optimistic mark was wrong, fix it by reloading from server
+        await loadDBList();
+    }
 }
+
 // Load DB list when page starts
 document.addEventListener("DOMContentLoaded", loadDBList);
 
